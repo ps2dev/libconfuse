@@ -28,7 +28,7 @@ jobs:
         run: |
           sudo apt-get -y update
           sudo apt-get -y install tree doxygen autopoint
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Configure
         run: |
           ./autogen.sh
@@ -44,7 +44,33 @@ jobs:
         run: |
           make check || (cat test/test-suite.log; false)
       - name: Upload Test Results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: libconfuse-test-${{ matrix.compiler }}
           path: test/*
+  
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+     run:
+      shell: msys2 {0}
+
+    steps:
+      - name: Install MSYS2 packages
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          install: |
+            base-devel git make texinfo flex bison patch binutils mingw-w64-i686-gcc mpc-devel tar
+            autotools gettext gettext-devel
+            mingw-w64-i686-cmake mingw-w64-i686-make mingw-w64-i686-libogg
+          update: true
+
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: |
+          ./autogen.sh
+          ./configure --prefix= --disable-silent-rules
+      - name: Build
+        run: |
+          make
